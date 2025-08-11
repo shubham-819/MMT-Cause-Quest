@@ -825,10 +825,7 @@ const HomePage = () => {
                     <CardMedia
                       component="img"
                       height="150"
-                      image={activity.image?.startsWith('/uploads') ? 
-                        `http://localhost:5000${activity.image}` : 
-                        activity.image || 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400'
-                      }
+                      image={activity.image || 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400'}
                       alt={activity.title}
                       sx={{ objectFit: 'cover' }}
                     />

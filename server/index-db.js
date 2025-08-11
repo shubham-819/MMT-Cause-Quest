@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -94,21 +95,7 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
-app.get('/api/auth/me', (req, res) => {
-  // Mock current user
-  res.json({ 
-    user: {
-      id: 1,
-      name: 'Demo User',
-      email: 'demo@example.com',
-      points: 1647,
-      level: 2,
-      avatar: '',
-      activitiesJoined: [],
-      badges: [{ name: 'Newcomer' }]
-    }
-  });
-});
+// Mock endpoint removed - using proper auth implementation below
 
 // Activities routes
 app.get('/api/activities', async (req, res) => {
