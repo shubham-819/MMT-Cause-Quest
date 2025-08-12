@@ -213,9 +213,11 @@ const dbOperations = {
       const { userId, ...otherFilters } = filters;
       
       let query = `
-        SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar
+        SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar,
+               COUNT(ap_count.user_id) as current_participants
         FROM activities a
         LEFT JOIN users u ON a.organizer_id = u.id
+        LEFT JOIN activity_participants ap_count ON a.id = ap_count.activity_id
       `;
       
       let whereConditions = ['a.status = \'active\'', 'a.date >= DATE(\'now\')'];
@@ -252,7 +254,7 @@ const dbOperations = {
         params.push(`%${otherFilters.search}%`, `%${otherFilters.search}%`);
       }
       
-      query += ' ORDER BY a.date ASC, a.time ASC';
+      query += ' GROUP BY a.id ORDER BY a.date ASC, a.time ASC';
       
       db.all(query, params, (err, rows) => {
         if (err) {
@@ -597,15 +599,18 @@ const dbOperations = {
         if (destinations.length === 0) {
           // No bookings, suggest popular activities (excluding self-organized and joined)
           db.all(`
-            SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar
+            SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar,
+                   COUNT(ap_count.user_id) as current_participants
             FROM activities a
             LEFT JOIN users u ON a.organizer_id = u.id
             LEFT JOIN activity_participants ap ON a.id = ap.activity_id AND ap.user_id = ?
+            LEFT JOIN activity_participants ap_count ON a.id = ap_count.activity_id
             WHERE a.status = 'active' 
               AND a.organizer_id != ? 
               AND ap.user_id IS NULL
               AND a.date >= DATE('now')
-            ORDER BY a.current_participants DESC, a.date ASC
+            GROUP BY a.id
+            ORDER BY current_participants DESC, a.date ASC
             LIMIT 10
           `, [userId, userId], (err, rows) => {
             if (err) {
@@ -632,15 +637,18 @@ const dbOperations = {
         params.push(userId, userId);
         
         db.all(`
-          SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar
+          SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar,
+                 COUNT(ap_count.user_id) as current_participants
           FROM activities a
           LEFT JOIN users u ON a.organizer_id = u.id
           LEFT JOIN activity_participants ap ON a.id = ap.activity_id AND ap.user_id = ?
+          LEFT JOIN activity_participants ap_count ON a.id = ap_count.activity_id
           WHERE a.status = 'active' 
             AND (${placeholders}) 
             AND a.organizer_id != ? 
             AND ap.user_id IS NULL
             AND a.date >= DATE('now')
+          GROUP BY a.id
           ORDER BY a.date ASC
           LIMIT 10
         `, params, (err, rows) => {
@@ -650,15 +658,18 @@ const dbOperations = {
             console.log(`❌ No activities found for user destinations, falling back to popular activities`);
             // No activities in booking destinations, suggest popular activities
             db.all(`
-              SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar
+              SELECT a.*, u.name as organizer_name, u.avatar as organizer_avatar,
+                     COUNT(ap_count.user_id) as current_participants
               FROM activities a
               LEFT JOIN users u ON a.organizer_id = u.id
               LEFT JOIN activity_participants ap ON a.id = ap.activity_id AND ap.user_id = ?
+              LEFT JOIN activity_participants ap_count ON a.id = ap_count.activity_id
               WHERE a.status = 'active' 
                 AND a.organizer_id != ? 
                 AND ap.user_id IS NULL
                 AND a.date >= DATE('now')
-              ORDER BY a.current_participants DESC, a.date ASC
+              GROUP BY a.id
+              ORDER BY current_participants DESC, a.date ASC
               LIMIT 10
             `, [userId, userId], (err, fallbackRows) => {
               if (err) {
@@ -716,6 +727,10 @@ const dbOperations = {
         min: row.min_participants || 1,
         max: row.max_participants || 10
       },
+      // Frontend compatibility fields
+      participants: row.current_participants || 0,
+      maxParticipants: row.max_participants || 10,
+      registeredParticipants: Array(row.current_participants || 0).fill({}), // Mock array for compatibility
       requirements: {
         guidelines: row.requirements || '',
         ageLimit: {

@@ -4,7 +4,7 @@ echo "🚀 Setting up MMT Cause Quest - Volun-Tourism Platform"
 echo "======================================================"
 
 # Check if Node.js is installed
-if ! node -v &> /dev/null; then
+if ! command -v node &> /dev/null; then
     echo "❌ Node.js is not installed. Please install Node.js (v16 or higher) first."
     echo "   Visit: https://nodejs.org/"
     exit 1
