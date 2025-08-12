@@ -4,9 +4,9 @@
   "description": "Backend API for MMT Cause Quest",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index-db.js",
-    "dev-standalone": "nodemon index-standalone.js",
-    "dev-full": "nodemon index.js",
+    "dev": "npx nodemon index-db.js",
+    "dev-standalone": "npx nodemon index-standalone.js",
+    "dev-full": "npx nodemon index.js",
     "start": "node index-db.js",
     "start-standalone": "node index-standalone.js",
     "start-full": "node index.js",
@@ -28,7 +28,7 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "jest": "^29.6.2"
+    "jest": "^29.6.2",
+    "nodemon": "^3.1.10"
   }
 }
