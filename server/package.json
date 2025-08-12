@@ -7,7 +7,6 @@
     "dev": "nodemon index-db.js",
     "dev-standalone": "nodemon index-standalone.js",
     "dev-full": "nodemon index.js",
-    "build": "echo 'No build step required for Node.js server'",
     "start": "node index-db.js",
     "start-standalone": "node index-standalone.js",
     "start-full": "node index.js",

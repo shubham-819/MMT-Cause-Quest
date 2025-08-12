@@ -1,27 +1,40 @@
 #!/bin/bash
 
-echo "🚀 Setting up MMT Cause Quest - Volun-Tourism Platform (Vite + Amplify)"
-echo "================================================================"
+echo "🚀 Setting up MMT Cause Quest - Volun-Tourism Platform"
+echo "======================================================"
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js (v18 or higher) first."
+    echo "❌ Node.js is not installed. Please install Node.js (v16 or higher) first."
     echo "   Visit: https://nodejs.org/"
     exit 1
 fi
 
 # Check Node.js version
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-    echo "❌ Node.js version 18 or higher is required. Current version: $(node -v)"
-    echo "   Please update Node.js and try again."
+if [ "$NODE_VERSION" -lt 14 ]; then
+    echo "❌ Node.js version 14 or higher is required. Current version: $(node -v)"
     exit 1
 fi
 
 echo "✅ Node.js version: $(node -v)"
 
-# SQLite database will be created automatically
-echo "✅ Using SQLite database (no additional setup required)"
+# Check if MongoDB is running (optional - can use cloud)
+if command -v mongod &> /dev/null; then
+    echo "✅ MongoDB is installed"
+    # Check if MongoDB is running
+    if pgrep mongod > /dev/null; then
+        echo "✅ MongoDB is running"
+    else
+        echo "⚠️  MongoDB is not running. You can:"
+        echo "   1. Start local MongoDB: brew services start mongodb/brew/mongodb-community (macOS)"
+        echo "   2. Or use MongoDB Atlas (cloud) - update MONGODB_URI in .env"
+    fi
+else
+    echo "⚠️  MongoDB not found locally. You can:"
+    echo "   1. Install MongoDB locally"
+    echo "   2. Or use MongoDB Atlas (cloud) - update MONGODB_URI in .env"
+fi
 
 echo ""
 echo "📦 Installing dependencies..."
@@ -45,60 +58,59 @@ cd ..
 echo ""
 echo "🔧 Setting up configuration..."
 
-# Setup environment files
-echo "🔧 Setting up environment configuration..."
-
 # Create server .env file if it doesn't exist
 if [ ! -f "server/.env" ]; then
     echo "Creating server/.env file..."
-    cp server/.env.example server/.env
-    echo "✅ Created server/.env file from template"
+    cat > server/.env << EOL
+# Database
+MONGODB_URI=mongodb://localhost:27017/mmt-cause-quest
+
+# JWT Secret
+JWT_SECRET=mmt-cause-quest-super-secret-jwt-key-2024
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# Email Configuration (optional - for notifications)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-specific-password
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+
+# External API Keys (optional)
+GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+EOL
+    echo "✅ Created server/.env file with default values"
     echo "⚠️  Please update the values in server/.env as needed"
 else
     echo "✅ server/.env file already exists"
 fi
 
-# Create client .env file if it doesn't exist
-if [ ! -f "client/.env" ]; then
-    echo "Creating client/.env file..."
-    cp client/.env.example client/.env
-    echo "✅ Created client/.env file from template"
-else
-    echo "✅ client/.env file already exists"
-fi
-
 # Create uploads directory
-mkdir -p server/uploads/activities
-echo "✅ Created uploads directory structure"
+mkdir -p server/uploads
+echo "✅ Created uploads directory"
 
 echo ""
 echo "🎉 Setup completed successfully!"
 echo ""
-echo "🚀 To start development:"
-echo "   npm run dev          # Start both frontend and backend"
-echo "   npm run client       # Start frontend only (Vite)"
-echo "   npm run server       # Start backend only"
+echo "🚀 To start the application:"
+echo "   npm run dev"
 echo ""
-echo "🏗️ To build for production:"
-echo "   npm run build        # Build frontend"
-echo "   npm run preview      # Preview production build"
-echo ""
-echo "📱 Development URLs:"
-echo "   Frontend (Vite): http://localhost:3000"
-echo "   Backend API:     http://localhost:5000"
-echo ""
-echo "☁️ AWS Amplify Deployment:"
-echo "   • amplify.yml configuration included"
-echo "   • Environment variables configured"
-echo "   • Ready for full-stack deployment"
+echo "📱 The application will be available at:"
+echo "   Frontend: http://localhost:3000"
+echo "   Backend:  http://localhost:5000"
 echo ""
 echo "📚 Key features:"
-echo "   🎯 React 18 with Vite for fast development"
-echo "   🎨 Material-UI for beautiful components"
-echo "   🚀 Full-stack deployment ready"
-echo "   🔐 JWT authentication"
-echo "   📱 Responsive design"
-echo "   📊 SQLite database"
+echo "   🎯 Be a Cause - Create impact activities"
+echo "   🤝 Join a Cause - Participate in activities"
+echo "   🏆 Gamification - Points, badges, leaderboards"
+echo "   ✅ TEM Verification - Quality assurance"
+echo "   📍 Location Tracking - GPS verification"
 echo ""
-echo "👥 Built by Team Manzil Makers"
-echo "================================================================"
+echo "👥 Built by Team Manzil Makers for HackForGood"
+echo "======================================================"

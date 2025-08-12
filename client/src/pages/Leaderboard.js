@@ -18,6 +18,12 @@ import {
   Paper,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
 } from '@mui/material';
 import {
   EmojiEvents,
@@ -30,8 +36,14 @@ import {
   School,
   HealthAndSafety,
   Museum,
+  ContentCopy,
+  WhatsApp,
+  Facebook,
+  Twitter,
+  LinkedIn,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const Leaderboard = () => {
   const { user } = useAuth();
@@ -39,6 +51,8 @@ const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [userStats, setUserStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareContent, setShareContent] = useState('');
 
   useEffect(() => {
     fetchLeaderboardData();
@@ -46,98 +60,95 @@ const Leaderboard = () => {
 
   const fetchLeaderboardData = async () => {
     try {
-      // Mock data for demonstration - in real app, fetch from API
-      const mockData = [
-        {
-          id: 1,
-          name: 'Priya Sharma',
-          avatar: 'https://images.unsplash.com/photo-1494790108755-2616b9567afe?w=100',
-          points: 2850,
-          level: 5,
-          activitiesCompleted: 28,
-          location: 'Mumbai, Maharashtra',
-          badges: ['Environment Champion', 'Community Leader', 'Travel Enthusiast'],
-          rank: 1,
-          growth: '+250 pts this month'
-        },
-        {
-          id: 2,
-          name: 'Rahul Kumar',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-          points: 2640,
-          level: 4,
-          activitiesCompleted: 24,
-          location: 'Delhi, Delhi',
-          badges: ['Education Advocate', 'Green Warrior'],
-          rank: 2,
-          growth: '+180 pts this month'
-        },
-        {
-          id: 3,
-          name: 'Ananya Patel',
-          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-          points: 2420,
-          level: 4,
-          activitiesCompleted: 22,
-          location: 'Bangalore, Karnataka',
-          badges: ['Healthcare Hero', 'Tech for Good'],
-          rank: 3,
-          growth: '+320 pts this month'
-        },
-        {
-          id: 4,
-          name: 'Arjun Singh',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-          points: 2180,
-          level: 3,
-          activitiesCompleted: 19,
-          location: 'Goa, Goa',
-          badges: ['Beach Cleanup Champion'],
-          rank: 4,
-          growth: '+140 pts this month'
-        },
-        {
-          id: 5,
-          name: 'Kavya Reddy',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-          points: 1950,
-          level: 3,
-          activitiesCompleted: 17,
-          location: 'Chennai, Tamil Nadu',
-          badges: ['Cultural Preservationist'],
-          rank: 5,
-          growth: '+90 pts this month'
-        }
-      ];
-
-      // Add user to leaderboard if logged in
-      if (user) {
-        const userRank = {
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar || '',
-          points: user.points || 1647,
-          level: user.level || 2,
-          activitiesCompleted: user.activitiesJoined?.length || 12,
-          location: user.location ? `${user.location.city}, ${user.location.state}` : 'Location not set',
-          badges: user.badges?.map(b => b.name) || ['Newcomer'],
-          rank: 8,
-          growth: '+75 pts this month'
-        };
+      setLoading(true);
+      
+      // Fetch real leaderboard data from API
+      const response = await fetch('/api/gamification/leaderboard');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setLeaderboardData(data.leaderboard);
         
-        setUserStats(userRank);
+        // Find current user in leaderboard and set as userStats
+        if (user && data.leaderboard) {
+          const currentUser = data.leaderboard.find(u => u.id === user.id);
+          if (currentUser) {
+            setUserStats(currentUser);
+          } else {
+            // User not in top leaderboard, create their stats
+            const userResponse = await fetch(`/api/users/${user.id}`);
+            const userData = await userResponse.json();
+            
+            if (userResponse.ok) {
+              const userRank = {
+                id: user.id,
+                name: user.name,
+                avatar: user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`,
+                points: userData.points || 0,
+                level: Math.max(1, Math.floor((userData.points || 0) / 1000) + 1),
+                activitiesCompleted: userData.activitiesJoined?.length || 0,
+                location: userData.location || 'Location not set',
+                badges: ['Newcomer'],
+                rank: data.leaderboard.length + 1,
+                growth: `+${Math.min(userData.points || 0, 100)} pts this month`
+              };
+              setUserStats(userRank);
+            }
+          }
+        }
+      } else {
+        throw new Error(data.error || 'Failed to fetch leaderboard');
       }
-
-      setLeaderboardData(mockData);
+      
       setLoading(false);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       setLoading(false);
+      
+      // Fallback to empty data on error
+      setLeaderboardData([]);
     }
   };
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
+  };
+
+  const handleShare = (participant) => {
+    const content = `🎉 Check out ${participant.name}'s amazing achievements on MMT Cause Quest!\n\n🏆 Rank: #${participant.rank}\n⭐ Points: ${participant.points}\n🎯 Level: ${participant.level}\n🌟 Activities: ${participant.activitiesCompleted}\n📍 ${participant.location}\n\nJoin the movement and make a difference! #MMTCauseQuest #MakeADifference`;
+    setShareContent(content);
+    setShareDialogOpen(true);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareContent);
+    toast.success('Copied to clipboard!');
+    setShareDialogOpen(false);
+  };
+
+  const shareToSocial = (platform) => {
+    const encodedContent = encodeURIComponent(shareContent);
+    let url = '';
+    
+    switch (platform) {
+      case 'whatsapp':
+        url = `https://wa.me/?text=${encodedContent}`;
+        break;
+      case 'facebook':
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodedContent}`;
+        break;
+      case 'twitter':
+        url = `https://twitter.com/intent/tweet?text=${encodedContent}`;
+        break;
+      case 'linkedin':
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedContent}`;
+        break;
+      default:
+        return;
+    }
+    
+    window.open(url, '_blank');
+    setShareDialogOpen(false);
   };
 
   const getCategoryIcon = (category) => {
@@ -431,7 +442,7 @@ const Leaderboard = () => {
                         </Typography>
                       </Box>
                       <Tooltip title="Share profile">
-                        <IconButton size="small">
+                        <IconButton size="small" onClick={() => handleShare(leader)}>
                           <Share sx={{ fontSize: 16 }} />
                         </IconButton>
                       </Tooltip>
@@ -443,6 +454,43 @@ const Leaderboard = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialogOpen} onClose={() => setShareDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Share Achievement</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            value={shareContent}
+            onChange={(e) => setShareContent(e.target.value)}
+            variant="outlined"
+            sx={{ mb: 2 }}
+          />
+          <Box display="flex" gap={1} justifyContent="center" flexWrap="wrap">
+            <IconButton onClick={copyToClipboard} color="primary">
+              <ContentCopy />
+            </IconButton>
+            <IconButton onClick={() => shareToSocial('whatsapp')} sx={{ color: '#25d366' }}>
+              <WhatsApp />
+            </IconButton>
+            <IconButton onClick={() => shareToSocial('facebook')} sx={{ color: '#4267b2' }}>
+              <Facebook />
+            </IconButton>
+            <IconButton onClick={() => shareToSocial('twitter')} sx={{ color: '#1da1f2' }}>
+              <Twitter />
+            </IconButton>
+            <IconButton onClick={() => shareToSocial('linkedin')} sx={{ color: '#0077b5' }}>
+              <LinkedIn />
+            </IconButton>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShareDialogOpen(false)}>Cancel</Button>
+          <Button onClick={copyToClipboard} variant="contained">Copy & Close</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

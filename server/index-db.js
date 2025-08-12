@@ -1,4 +1,3 @@
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -95,7 +94,7 @@ app.post('/api/auth/register', (req, res) => {
   }
 });
 
-// Mock endpoint removed - using proper auth implementation below
+
 
 // Activities routes
 app.get('/api/activities', async (req, res) => {

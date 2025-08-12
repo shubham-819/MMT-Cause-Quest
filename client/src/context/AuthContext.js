@@ -41,27 +41,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Try sessionStorage first (tab-specific), then localStorage (persistent)
+        // Only use session-specific token for tab isolation
         const sessionToken = sessionStorage.getItem(`token_${sessionId}`);
-        const persistentToken = localStorage.getItem('token');
-        const savedToken = sessionToken || persistentToken;
         
-        if (savedToken) {
+        if (sessionToken) {
           // Set axios headers before making the request
-          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${sessionToken}`;
           axiosInstance.defaults.headers.common['X-Session-ID'] = sessionId;
           
           try {
             const response = await axiosInstance.get('/api/auth/me');
             setUser(response.data.user);
-            setToken(savedToken);
-            
-            // Store in sessionStorage for this tab
-            sessionStorage.setItem(`token_${sessionId}`, savedToken);
+            setToken(sessionToken);
             
           } catch (error) {
-            // Token is invalid, remove it
-            localStorage.removeItem('token');
+            // Token is invalid, remove it from this session
             sessionStorage.removeItem(`token_${sessionId}`);
             setToken(null);
             setUser(null);
@@ -87,8 +81,7 @@ export const AuthProvider = ({ children }) => {
 
       const { token: newToken, user: userData } = response.data;
       
-      // Save token to both localStorage (persistent) and sessionStorage (tab-specific)
-      localStorage.setItem('token', newToken);
+      // Save token only to sessionStorage for tab-specific isolation
       sessionStorage.setItem(`token_${sessionId}`, newToken);
       setToken(newToken);
       setUser(userData);
@@ -109,8 +102,7 @@ export const AuthProvider = ({ children }) => {
       
       const { token: newToken, user: newUser } = response.data;
       
-      // Save token to both localStorage (persistent) and sessionStorage (tab-specific)
-      localStorage.setItem('token', newToken);
+      // Save token only to sessionStorage for tab-specific isolation
       sessionStorage.setItem(`token_${sessionId}`, newToken);
       setToken(newToken);
       setUser(newUser);
@@ -126,8 +118,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Remove token from both localStorage and sessionStorage
-    localStorage.removeItem('token');
+    // Remove token only from sessionStorage for this tab
     sessionStorage.removeItem(`token_${sessionId}`);
     setToken(null);
     setUser(null);
@@ -149,7 +140,6 @@ export const AuthProvider = ({ children }) => {
     const demoToken = `demo-token-${sessionId}`;
     setUser(demoUser);
     setToken(demoToken);
-    localStorage.setItem('token', demoToken);
     sessionStorage.setItem(`token_${sessionId}`, demoToken);
     toast.success('Demo login successful!');
   };
